@@ -1,5 +1,4 @@
 import React, {useState} from 'react';
-import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import TextField from '@material-ui/core/TextField';
@@ -8,12 +7,13 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Link from '@material-ui/core/Link';
 import Grid from '@material-ui/core/Grid';
 import Box from '@material-ui/core/Box';
-import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import {Link as RouterLink, useHistory} from "react-router-dom"
 import {api} from "../../utils/api"
+import { ToastContainer, toast, Zoom } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.min.css';
  
 function Copyright() {
   return (
@@ -45,6 +45,11 @@ const useStyles = makeStyles((theme) => ({
   },
   submit: {
     margin: theme.spacing(3, 0, 2),
+
+    backgroundColor:"#8a540a",
+    '&:hover': {
+      backgroundColor: "#ba6f07",
+   },
   },
 }));
 
@@ -56,6 +61,28 @@ export default function SignUp() {
   const [password, setPassword] = useState('')
   const [age, setAge] = useState('')
   const history = useHistory()
+
+
+  const notify = (err:boolean, msg:string) => err ? toast.error(msg, {
+    position: 'top-center',
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+  }) : toast.success(msg, {
+    position: "top-center",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    onClose: () => history.push("/")
+})
+  
+ 
 
   const handleSignUp = (e:any) => {
     e.preventDefault();
@@ -69,8 +96,24 @@ export default function SignUp() {
 
     api.post('/users/create', data).then(res => {
       console.log(res.data)
+      if(res.data.succes === false){
+        //runs if error on create user
+        if (Array.isArray(res.data.error)){
+          //eslint-disable-next-line
+          res.data.error.map((item:string) => {
+            notify(true, item)
+          })
+        }
+
+        return notify(true, res.data.error)
+      }
+
+              //runs on user created succesfully
       localStorage.setItem('user', JSON.stringify(res.data.user))
-      history.push('/')
+      notify(false, res.data.msg)
+
+
+
     }).catch(error =>{
         console.log(error)
       }
@@ -81,9 +124,19 @@ export default function SignUp() {
     <Container component="main" maxWidth="xs">
       <CssBaseline />
       <div className={classes.paper}>
-        <Avatar className={classes.avatar}>
-          <LockOutlinedIcon />
-        </Avatar>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        transition={Zoom}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable={false}
+        pauseOnHover={false}
+      />
+        
         <Typography component="h1" variant="h5">
           Sign up
         </Typography>

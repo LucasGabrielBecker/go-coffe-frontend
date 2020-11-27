@@ -18,3 +18,19 @@
     width: 70vw;
     height: 100%;
 }
+
+.content{
+    width: 100%;
+    height: 100%;
+}
+
+.crime-marker {
+    background: none;
+    border: none;
+
+  }
+
+  
+.crime-marker img{
+    width: 25px;
+}
