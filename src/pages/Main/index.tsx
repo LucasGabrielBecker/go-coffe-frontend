@@ -1,93 +1,130 @@
-import React from "react"
-import ReactMapboxGl, { Layer, Feature, Marker, ZoomControl  } from 'react-mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, {useEffect, useState} from "react"
+import {Link} from "react-router-dom"
+
 import * as config from "../../utils/config.json"
 import "./style.css"
 
 import mapMarker from "../../images/maps-and-flags.svg"
+import logoImg from "../../images/GoCoffe_logo.svg"
 
+import { MapContainer, TileLayer, Popup, Marker} from "react-leaflet"
+import * as leaflet from 'leaflet'
+
+import {api} from "./../../utils/api"
+import {Go} from "../../interfaces/go"
+import {User} from "../../interfaces/user"
+
+import { GrView } from "react-icons/gr";
 
 
 export default function MapComponent(){
 
-    const [position, setPosition] = React.useState('')
-
-    const gos = [
-      {
-        id:1,
-        name:"Pizza on Kako's House",
-        address: "Rua Vênus, 592 - Sitio Cercado",
-        latitude: -25.528762,
-        longitude: -49.262167,
-        participants :[],
-        hour:"20:30h",
-        date: "27/11/2020",
-        category: "food"
-      },
-      {
-        id:1,
-        name:"Almoço na casa da Marilda",
-        address: "Rua Sd. José Bueno da Silva, 611 - Sitio Cercado",
-        latitude: -25.530047,
-        longitude: -49.254316,
-        participants :[],
-        hour:"11:45h",
-        date: "29/11/2020",
-        category: "food"
+    const [userLogged, setUserLogged] = React.useState<User>({})
+    const [gos, setGos] = useState<Go[]>([])
+    
+    const handleGoAssignment = (e: Go) => {
+      console.log(e)
+      const data = {
+        user:userLogged._id,
+        go: e._id
       }
-    ]
-
-
-
-    function handleMapClick(map:any, event:any){
-        setPosition(event.lngLat)
-        console.log(position)
+      api.post('/gos/asignParticipantToGo', data).then(res=>{
+        console.log(res.data)
+      })
     }
-  
-  const Map = ReactMapboxGl({
-    accessToken : config.mapbox_token
-  });
+   
 
+    useEffect(()=>{
+      const localUser = JSON.parse(localStorage.getItem('user')|| '{}')
+      if(localUser != '{}'){
+        console.log(localUser)
+        setUserLogged(localUser)
+      }
+
+      api.get("/gos/listgos").then(res=>{
+        
+        setGos(res.data.gos)
+      })
+    },[])
+
+    const Loading = () =>{
+      return(
+        <>
+          <h2>Loading</h2>
+        </>
+      )
+    }
+
+    var greenIcon = leaflet.icon({
+      iconUrl: mapMarker,
+      iconSize:     [38, 95], // size of the icon
+      shadowSize:   [50, 64], // size of the shadow
+      iconAnchor:   [19, 42.5], // point of the icon which will correspond to marker's location
+      shadowAnchor: [4, 62],  // the same for the shadow
+      popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+  });
+  
   return(
     <div className="map-container">
       <aside className="aside-01">
+
+        <img src={logoImg} alt="GoCoffeLogo" />
+
         <div className="content">
-          {
+          { gos.length >= 0 ? 
             gos.map(go =>(
-              <div className="go">
+              <div className="go" key={go._id}>
                 <span>{go.name}</span>
                 <span>{go.address}</span>
                 <span>{go.hour}</span>
               </div>
             ))
+            :
+            <Loading />
           }
         </div>
       </aside>
       <aside className="aside-02">
-
-      <Map
-        style="mapbox://styles/mapbox/streets-v9"
-        containerStyle={{
-        height: '100%',
-        width: '100%'
-        }}
-        movingMethod="easeTo"
-        zoom={[14]}
-        center={[-49.254316,-25.530047]}
+        <MapContainer 
+        center={[-25.530047,-49.254316]}
+        zoom={15}
         >
-        <Layer type="symbol" id="marker" layout={{ 'icon-image': 'marker-15' }}>
-          {gos.map(go=>(
+          <TileLayer
+          url={`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/256/{z}/{x}/{y}@2x?access_token=${config.mapbox_token}`}
+          />
+
+          { gos.length >= 1 ?
+            gos.map(go => (
               <Marker
-              className="crime-marker"
-                key={go.id}
-                coordinates={[go.latitude, go.longitude]}
-                anchor="bottom"
+                key={go._id}
+                position={[go.latitude, go.longitude]}
+                icon={greenIcon}
+              >
+                <Popup
+                  closeButton={false}
                 >
-                <img src={mapMarker} alt="icon marker" width="100" height="100"/>
+                  <div className="pop-up-content">
+                    <aside>
+                      <p><strong>{go.name}</strong></p>
+                      <span>{go.address}</span>
+                      <button onClick={(e) => handleGoAssignment(go)}>Inscrever-se</button>
+                    </aside>
+                    <aside>
+                    <Link to={`/gos/${go._id}`}>
+                      <GrView color="#000000" size={15} />
+                    </Link>
+
+                    </aside>
+
+                  </div>
+                </Popup>
               </Marker>
-          ))}
-        </Layer>
-      </Map>
+            ))
+            :
+            <Loading />
+          }
+
+        </MapContainer>
       </aside>
 
       </div>

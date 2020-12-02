@@ -7,6 +7,7 @@ import {
 import SignInSide from "./pages/Login/index"
 import SignUp from "./pages/SignUp/index"
 import MainPage from "./pages/Main"
+import  CoffeView from "./pages/CoffeView"
 
 export default function Routes() {
   return (
@@ -20,6 +21,9 @@ export default function Routes() {
           </Route>
           <Route path="/main">
             <MainPage />
+          </Route>
+          <Route path="/gos/:id">
+            <CoffeView />
           </Route>
         </Switch>
     </Router>
